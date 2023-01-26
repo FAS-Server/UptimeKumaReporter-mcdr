@@ -23,8 +23,11 @@ def _report(status: str, msg: str = "OK", ping: int = 0):
     url = config.url + '?' + urlencode(data)
     if config.log_push:
         PSI.get_instance().logger.info(f"reporting: {url}")
-    request = req.Request(url, headers= {'User-Agent' : "MCDR Reporter"})
-    req.urlopen(request)
+    try:
+        request = req.Request(url, headers= {'User-Agent' : "MCDR Reporter"})
+        req.urlopen(request)
+    except Exception:
+        pass
 
 @new_thread("UptimeKumaReporter")
 def start_job():
@@ -46,7 +49,7 @@ def on_unload(server: PSI):
     _report("down", "UptimeKumaReporter plugin unload")
 
 def on_server_startup(server: PSI):
-    _report("up")
+    _report("up", "Server started.")
 
 def on_server_stop(server: PSI, code: int):
     msg = "Server stopped." if code == 0 else f"Server crash with code {code}"
