@@ -1,0 +1,23 @@
+{
+  "id": "uptime_kuma_reporter",
+  "version": "0.0.1",
+  "name": "UptimeKuma Reporter",
+  "description": {
+    "en_us": "Report server status to UptimeKuma.",
+    "zh_cn": "将服务器运行情况上报至 UptimeKuma"
+  },
+  "author": [
+    "YehowahLiu"
+  ],
+  "link": "https://github.com/FAS-Server/UptimeKumaReporter-mcdr",
+  "dependencies": {
+    "mcdreforged": ">=2.0.0"
+  },
+  "entrypoint": "uptime_kuma_reporter.entry",
+  "archive_name": "UptimeKumaReporter-v{version}.pyz",
+  "resources": [
+    "LICENSE",
+    "README.md",
+    "README_en.md"
+  ]
+}
