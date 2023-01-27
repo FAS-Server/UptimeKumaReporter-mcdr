@@ -5,8 +5,7 @@ import schedule
 import urllib.request as req
 from urllib.parse import urlencode
 import warnings
-
-
+import traceback
 job: schedule.Job
 config: Config
 
@@ -26,8 +25,8 @@ def _report(status: str, msg: str = "OK", ping: int = 0):
     try:
         request = req.Request(url, headers= {'User-Agent' : "MCDR Reporter"})
         req.urlopen(request)
-    except Exception:
-        pass
+    except:
+        PSI.get_instance().logger.error(traceback.format_exc())
 
 @new_thread("UptimeKumaReporter")
 def start_job():
