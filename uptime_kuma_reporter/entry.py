@@ -1,16 +1,37 @@
+import time
 from mcdreforged.api.types import PluginServerInterface as PSI
-from mcdreforged.api.decorator import new_thread
 from .config import Config
-import schedule
 import urllib.request as req
+from threading import Event, Thread
 from urllib.parse import urlencode
 import warnings
 import traceback
 import functools
-job: schedule.Job
 config: Config
 
-def catch_exceptions(cancel_on_failure=False):
+class Reporter(Thread):
+    def __init__(self, interval: int):
+        super.__init__()
+        self._report_time = time.time()
+        self.stop_event = Event()
+        self.interval = interval
+
+    def run(self):
+        while True: # loop until stop
+            while True: # # loop for report
+                if self.stop_event.wait(1):
+                    return
+                if time.time() - self._report_time > self.interval:
+                    break
+            self._report_time = time.time()
+            report()
+
+    def stop(self):
+        self.stop_event.set()
+
+reporter: Reporter
+
+def catch_exceptions():
     def catch_exceptions_decorator(job_func):
         @functools.wraps(job_func)
         def wrapper(*args, **kwargs):
@@ -18,8 +39,6 @@ def catch_exceptions(cancel_on_failure=False):
                 return job_func(*args, **kwargs)
             except:
                 PSI.get_instance().logger.warn(traceback.format_exc())
-                if cancel_on_failure:
-                    return schedule.CancelJob
         return wrapper
     return catch_exceptions_decorator
 
@@ -40,25 +59,17 @@ def _report(status: str, msg: str = "OK", ping: int = 0):
     request = req.Request(url, headers= {'User-Agent' : "MCDR Reporter"})
     req.urlopen(request)
 
-@catch_exceptions()
-@new_thread("UptimeKumaReporter")
-def start_job():
-    global job
-    job = schedule.every(config.interval).seconds.do(report)
-    while True:
-        schedule.run_pending()
-
 def on_load(server: PSI, prev_module):
-    global job, config
+    global config, reporter
     server.logger.info("UptimeKuma Reporter enabled.")
     config = server.load_config_simple(target_class=Config)
     report("Plugin loaded")
-    start_job()
+    reporter = Reporter(config.interval)
+    reporter.start()
 
 def on_unload(server: PSI):
-    global job
-    schedule.cancel_job(job)
     _report("down", "UptimeKumaReporter plugin unload")
+    reporter.stop()
 
 def on_server_startup(server: PSI):
     _report("up", "Server started.")
