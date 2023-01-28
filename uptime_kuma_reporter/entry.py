@@ -11,7 +11,9 @@ config: Config
 
 class Reporter(Thread):
     def __init__(self, interval: int):
-        super.__init__()
+        super().__init__()
+        self.setDaemon(True)
+        self.setName(self.__class__.__name__)
         self._report_time = time.time()
         self.stop_event = Event()
         self.interval = interval
@@ -69,7 +71,8 @@ def on_load(server: PSI, prev_module):
 
 def on_unload(server: PSI):
     _report("down", "UptimeKumaReporter plugin unload")
-    reporter.stop()
+    if reporter:
+        reporter.stop()
 
 def on_server_startup(server: PSI):
     _report("up", "Server started.")
