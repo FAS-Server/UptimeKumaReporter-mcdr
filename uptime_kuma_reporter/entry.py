@@ -6,13 +6,28 @@ import urllib.request as req
 from urllib.parse import urlencode
 import warnings
 import traceback
+import functools
 job: schedule.Job
 config: Config
+
+def catch_exceptions(cancel_on_failure=False):
+    def catch_exceptions_decorator(job_func):
+        @functools.wraps(job_func)
+        def wrapper(*args, **kwargs):
+            try:
+                return job_func(*args, **kwargs)
+            except:
+                PSI.get_instance().logger.warn(traceback.format_exc())
+                if cancel_on_failure:
+                    return schedule.CancelJob
+        return wrapper
+    return catch_exceptions_decorator
 
 def report(msg="OK"):
     status = "up" if PSI.get_instance().is_server_running() else "down"
     _report(status, msg=msg)
 
+@catch_exceptions()
 def _report(status: str, msg: str = "OK", ping: int = 0):
     if config.url == "":
         warnings.warn("Report url is not setup!")
@@ -22,12 +37,10 @@ def _report(status: str, msg: str = "OK", ping: int = 0):
     url = config.url + '?' + urlencode(data)
     if config.log_push:
         PSI.get_instance().logger.info(f"reporting: {url}")
-    try:
-        request = req.Request(url, headers= {'User-Agent' : "MCDR Reporter"})
-        req.urlopen(request)
-    except:
-        PSI.get_instance().logger.error(traceback.format_exc())
+    request = req.Request(url, headers= {'User-Agent' : "MCDR Reporter"})
+    req.urlopen(request)
 
+@catch_exceptions()
 @new_thread("UptimeKumaReporter")
 def start_job():
     global job
