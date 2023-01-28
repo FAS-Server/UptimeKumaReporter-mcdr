@@ -7,7 +7,16 @@ from urllib.parse import urlencode
 import warnings
 import traceback
 import functools
+
+
 config: Config
+_psi: PSI
+
+def psi():
+    if not _psi:
+        _psi = PSI.get_instance()
+    return _psi
+    
 
 class Reporter(Thread):
     def __init__(self, interval: int):
@@ -40,12 +49,12 @@ def catch_exceptions():
             try:
                 return job_func(*args, **kwargs)
             except:
-                PSI.get_instance().logger.warn(traceback.format_exc())
+                psi().logger.warn(traceback.format_exc())
         return wrapper
     return catch_exceptions_decorator
 
 def report(msg="OK"):
-    status = "up" if PSI.get_instance().is_server_running() else "down"
+    status = "up" if psi().is_server_running() else "down"
     _report(status, msg=msg)
 
 @catch_exceptions()
@@ -57,7 +66,7 @@ def _report(status: str, msg: str = "OK", ping: int = 0):
 
     url = config.url + '?' + urlencode(data)
     if config.log_push:
-        PSI.get_instance().logger.info(f"reporting: {url}")
+        psi().logger.info(f"reporting: {url}")
     request = req.Request(url, headers= {'User-Agent' : "MCDR Reporter"})
     req.urlopen(request)
 
