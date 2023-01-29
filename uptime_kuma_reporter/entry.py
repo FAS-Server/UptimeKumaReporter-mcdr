@@ -1,18 +1,20 @@
+import functools
 import time
-from mcdreforged.api.types import PluginServerInterface as PSI
-from .config import Config
+import traceback
 import urllib.request as req
+import warnings
 from threading import Event, Thread
 from urllib.parse import urlencode
-import warnings
-import traceback
-import functools
 
+from mcdreforged.api.types import PluginServerInterface as PSI
+
+from .config import Config
 
 config: Config
-_psi: PSI
+_psi: PSI = None
 
 def psi():
+    global _psi
     if not _psi:
         _psi = PSI.get_instance()
     return _psi
